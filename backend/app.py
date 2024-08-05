@@ -1,63 +1,56 @@
 from flask import Flask, request, jsonify
-import os
-from google.cloud import aiplatform
+import requests
 
 app = Flask(__name__)
 
 def generate_text(prompt):
-    # Set the API key as an environment variable
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "AIzaSyDFQlOm0NEBLruNRqJYqzg9-82Rhkkpf60"
+    # Set the API key
+    api_key = "AIzaSyDFQlOm0NEBLruNRqJYqzg9-82Rhkkpf60"
+    
+    # URL for the Gemini model endpoint
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
 
-    # Initialize the AI Platform client
-    client_options = {"api_endpoint": "us-central1-aiplatform.googleapis.com"}
-    aiplatform.init(client_options=client_options)
+    # Prepare the payload
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
 
-    # Load the model
-    model = aiplatform.Model(
-        model_name="projects/chromatic-idea-422815-v2/locations/us-central1/models/gemini-1.5-flash-latest"
-    )
+    # Set headers
+    headers = {
+        "Content-Type": "application/json"
+    }
 
-    # Generate text using the model
-    response = model.predict(instances=[{"prompt": prompt}])
-    return response.predictions[0]
+    # Make the POST request
+    response = requests.post(url, headers=headers, json=payload)
+    
+    # Log the response for debugging
+    print(f"Response status code: {response.status_code}")
+    print(f"Response content: {response.content.decode('utf-8')}")
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        response_json = response.json()
+        # Log the actual response JSON
+        print(f"Response JSON: {response_json}")
+        # Return the response JSON directly
+        return response_json
+    else:
+        return {
+            "error": f"Error: {response.status_code} - {response.text}"
+        }
 
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.get_json()
     prompt = data.get('prompt')
     generated_text = generate_text(prompt)
-    return jsonify({'generated_text': generated_text})
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
-
-from flask import Flask, request, jsonify
-import os
-import google.cloud.aiplatform as aiplatform
-
-app = Flask(__name__)
-
-def generate_text(prompt):
-    # Set the API key as an environment variable
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "AIzaSyDFQlOm0NEBLruNRqJYqzg9-82Rhkkpf60"
-
-    # Initialize the Gemini model
-    model = aiplatform.gapitlm.Model(
-        endpoint='projects/chromatic-idea-422815-v2/locations/us-central1/models/gemini-1.5-flash-latest'
-    )
-
-    # Generate text using the model
-    response = model.predict(prompt)
-    return response.text
-
-@app.route('/generate', methods=['POST'])
-def generate():
-        data = request.get_json()
-        prompt = data.get('prompt')
-        generated_text = generate_text(prompt)
-        return jsonify({'generated_text': generated_text})
+    return jsonify(generated_text)
 
 # Add a root endpoint for GET requests
 @app.route('/', methods=['GET'])

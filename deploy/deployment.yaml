@@ -21,7 +21,7 @@ spec:
         - containerPort: 5000
         env:
         - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: "AIzaSyDFQlOm0NEBLruNRqJYqzg9-82Rhkkpf60"
+          value: "/home/msathana6/chromatic-idea-422815-v2-3a52b94714fe.json"
         volumeMounts:
         - name: secret-volume
           mountPath: /secrets
@@ -30,3 +30,4 @@ spec:
       - name: secret-volume
         secret:
           secretName: google-cloud-key
+          
